@@ -1,29 +1,116 @@
-# SPACESHIP GAME
+---
 
-- The python script makes use of Pygame, a popular GUI module, to develop an interactive multiplayer Spaceship Game.
-- The 2 players compete to aim bullets at each other and the first player to lose their health, loses.
+# 🚀 Spaceship Game
 
-## Requirements:
+Bienvenue dans le projet **Spaceship Game**, un jeu multijoueur dynamique et personnalisable développé avec **Python** et **Pygame**, maintenant aussi disponible en ligne en version **HTML/JavaScript** pour une expérience accessible depuis n’importe quel navigateur 🌐.
 
-All the packages essential for running the script can be installed as follows:
+---
 
-``` sh
-$ pip install -r requirements.txt
+## 🔗 Démo en ligne
+
+🌐 Joue directement : [https://j0yb0y28.github.io/Spaceship_Game/](https://j0yb0y28.github.io/Spaceship_Game/)
+
+---
+
+## 📁 Structure du projet
+
+```
+Spaceship_Game/
+├── Assets/                   # Contient les images du jeu
+│   ├── Red_Spaceship.png     # Vaisseau rouge
+│   ├── Yellow_Spaceship.png  # Vaisseau jaune
+│   └── space.jpg             # Fond spatial
+├── main.py                   # Script principal Pygame
+├── utility.py                # Fonctions utilitaires (mouvements, chargement)
+├── requirements.txt          # Dépendances Python (pygame)
+├── index.html                # Version HTML jouable dans le navigateur
+├── README.md                 # Présentation du projet
+└── .gitignore
 ```
 
-# Gameplay Instructions:
-1. To start playing the game, run `python main.py` in your terminal.
+---
 
-2. You will see two spaceships on the screen separated by one barrier in the middle  of the screen.
+## ✨ Fonctionnalités
 
-3. For player in the left side of the screen: 
-    Use the W-A-S-D keys to move the spaceship up (W), down (S), left (A) or right (D).
-    Use the left side CTRL key on your keyboard to shoot a bullet from the spaceship.
+- 🎮 Mode **Multijoueur local (PvP)** ou **Solo vs IA**
+- 🧠 **IA adaptative** avec niveaux de difficulté (`Easy`, `Medium`, `Hard`)
+- 🛡️ IA capable de **défendre ou attaquer intelligemment** en fonction de sa santé
+- ⏳ **Compte à rebours** stylisé avant chaque partie
+- ⚙️ **Paramètres personnalisables** : mode de jeu, difficulté, vitesse
+- 💻 Interface **web responsive** avec design élégant
+- 🔄 **Contrôle clavier personnalisable** (WASD ou flèches)
 
-4. For player in the right side of the screen:
-    Use the arrows keys to move the spaceship up (Up arrow), down (Down arrow), left  (Left arrow) or right (Right arrow).
-    Use the right side CTRL key on your keyboard  to shoot a bullet from the spaceship.
+---
 
-5. If you manage to hit an opponent's spaceship with a bullet, it will reduce that player’s health by 1 point.
+## 🕹️ Commandes
 
-6. The first player to reduce the opponent's health to zero wins the game.
+### Joueur 1 (gauche) – par défaut :
+- **Déplacement** : `W` `A` `S` `D`
+- **Tir** : `F`
+
+### Joueur 2 (droite) :
+- **Déplacement** : Flèches directionnelles
+- **Tir** : `Ctrl Droit`
+
+---
+
+## 🚀 Lancement en local (version Python)
+
+### 1. Cloner le projet
+
+```bash
+git clone https://github.com/J0YB0Y28/Spaceship_Game.git
+cd Spaceship_Game
+```
+
+### 2. Installer les dépendances
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Lancer le jeu
+
+```bash
+python main.py
+```
+
+---
+
+## 🧠 Technologies utilisées
+
+- 🎮 `Pygame` pour la version locale Python
+- 🕸️ `HTML`, `CSS`, `JavaScript` pour la version web
+- 🚀 Déploiement GitHub Pages pour la démo en ligne
+
+---
+
+## 🧑‍💻 Auteur
+
+Projet développé par **Teddy Kana**  
+📧 [kanaboumkwoiit@outlook.com](mailto:kanaboumkwoiit@outlook.com)  
+🔗 [Portfolio](https://j0yb0y28.github.io/portfolio/) · [GitHub](https://github.com/J0YB0Y28) · [LinkedIn](https://www.linkedin.com/in/teddy-kana-6a26832b9/)
+
+---
+
+## 🧩 Améliorations futures
+
+- [ ] 🎧 Ajout de **sons de tir/explosion**
+- [ ] 🧠 IA encore plus réaliste (anticipation des mouvements ennemis)
+- [ ] 📱 Adaptation mobile avec commandes tactiles
+- [ ] 📊 Mode survie avec score/chrono
+
+---
+
+## 🖼️ Capture d’écran (à ajouter si souhaité)
+
+<img src="Assets/demo-ui.png" width="600">
+
+---
+
+## ✅ Licence
+
+Ce projet est open-source sous licence MIT.
+```
+
+---
