@@ -111,6 +111,5 @@ Projet développé par **Teddy Kana**
 ## ✅ Licence
 
 Ce projet est open-source sous licence MIT.
-```
 
 ---
