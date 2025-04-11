@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spaceship Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html {
+      width: 100%; height: 100%; background: black;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    canvas {
+      background: url('./Assets/space.jpg') no-repeat center center;
+      background-size: cover; display: block; margin: auto;
+    }
+    #menu, #gameOverScreen, #countdown {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.85); color: white; padding: 30px;
+      border-radius: 20px; text-align: center;
+      box-shadow: 0 0 30px rgba(255,255,255,0.2);
+    }
+    #menu h1 {
+      font-size: 2em; margin-bottom: 20px; display: flex;
+      align-items: center; justify-content: center; gap: 10px;
+    }
+    #menu h1::before { content: "🚀"; font-size: 1.2em; }
+    #menu p { font-size: 1em; margin: 10px 0; }
+    #menu select {
+      font-size: 1rem; margin-top: 10px; padding: 6px 10px;
+      border-radius: 6px; background: #222; color: white; border: 1px solid white;
+    }
+    #menu label {
+      display: block;
+      margin: 10px auto;
+      font-size: 1rem;
+    }
+    #menu button,
+    #gameOverScreen button,
+    #fireControlBtn {
+      background: #1e1e1e; color: white; border: 2px solid white;
+      padding: 10px 20px; border-radius: 10px; cursor: pointer;
+      transition: background 0.3s, transform 0.2s; font-size: 1rem;
+    }
+    #menu button:hover,
+    #gameOverScreen button:hover,
+    #fireControlBtn:hover {
+      background: #ffffff10; transform: scale(1.05);
+    }
+    #cooldownBars {
+      position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 20px;
+    }
+    .cooldown-bar {
+      width: 100px; height: 12px; background: #333;
+      border: 1px solid #888; border-radius: 5px; overflow: hidden;
+    }
+    .fill {
+      height: 100%; background: linear-gradient(to right, lime, green);
+      width: 0%;
+    }
+    #fireControlBtn {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    }
+  </style>
+</head>
+<body>
+  <div id="menu">
+    <h1>🚀 Spaceship War Game</h1>
+    <p>🎮 Player 1: WASD + F (tir)</p>
+    <p>🕹️ Player 2: Arrows + Right Ctrl</p>
+    <label>Mode:
+      <select id="modeSelect" onchange="updateAIDifficultyVisibility()">
+        <option value="solo">Solo (vs AI)</option>
+        <option value="multi">Multiplayer</option>
+      </select>
+    </label>
+    <label id="aiDifficultyLabel">AI Difficulty:
+      <select id="difficultySelect">
+        <option value="0.5">Easy</option>
+        <option value="1">Medium</option>
+        <option value="2">Hard</option>
+      </select>
+    </label>
+    <label>Game Speed:
+      <select id="speedSelect">
+        <option value="5">Normal</option>
+        <option value="7">Fast</option>
+        <option value="10">Ultra</option>
+      </select>
+    </label>
+    <br><br>
+    <button onclick="applySettingsAndStartCountdown()">🚀 Start Game</button>
+  </div>
+
+  <div id="gameOverScreen" style="display:none">
+    <h1 id="winnerText"></h1>
+    <button onclick="location.reload()">🔁 Restart</button>
+  </div>
+
+  <div id="cooldownBars" style="display:none">
+    <div class="cooldown-bar"><div id="yellowCooldown" class="fill"></div></div>
+    <div class="cooldown-bar"><div id="redCooldown" class="fill"></div></div>
+  </div>
+
+  <div id="countdown" style="display:none; font-size: 3rem;">3</div>
+  <button id="fireControlBtn" style="display:none" onclick="toggleFireSpeed()">Change Fire Rate (Normal)</button>
+
+  <canvas id="gameCanvas" width="900" height="500" style="display:none;"></canvas>
+
+  <script>
+    let soloMode = true;
+    let aiDifficulty = 0.5;
+    let VELOCITY = 5;
+    let FIRE_DELAY = 200;
+    let fireSpeedMode = 0;
+
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const yellowImg = new Image(); yellowImg.src = './Assets/Yellow_Spaceship.png';
+    const redImg = new Image(); redImg.src = './Assets/Red_Spaceship.png';
+    const countdownEl = document.getElementById("countdown");
+
+    const width = canvas.width, height = canvas.height;
+    const spaceshipWidth = 50, spaceshipHeight = 40;
+    const yellow = { x: 100, y: 250, width: spaceshipWidth, height: spaceshipHeight, bullets: [], health: 10 };
+    const red = { x: 700, y: 250, width: spaceshipWidth, height: spaceshipHeight, bullets: [], health: 10 };
+
+    const keys = {};
+    const BULLET_VEL = 7;
+    const MAX_BULLETS = 3;
+    let lastYellowShot = 0, lastRedShot = 0;
+
+    document.addEventListener('keydown', e => keys[e.code] = true);
+    document.addEventListener('keyup', e => keys[e.code] = false);
+
+    function updateAIDifficultyVisibility() {
+      const mode = document.getElementById('modeSelect').value;
+      document.getElementById('aiDifficultyLabel').style.display = mode === 'solo' ? 'block' : 'none';
+    }
+
+    function applySettingsAndStartCountdown() {
+      soloMode = document.getElementById('modeSelect').value === 'solo';
+      aiDifficulty = parseFloat(document.getElementById('difficultySelect').value);
+      VELOCITY = parseInt(document.getElementById('speedSelect').value);
+      document.getElementById('menu').style.display = 'none';
+      let count = 3;
+      countdownEl.style.display = 'block';
+      countdownEl.innerText = count;
+      const interval = setInterval(() => {
+        count--;
+        if (count > 0) countdownEl.innerText = count;
+        else if (count === 0) countdownEl.innerText = 'GO!';
+        else { clearInterval(interval); countdownEl.style.display = 'none'; startGame(); }
+      }, 1000);
+    }
+
+    function toggleFireSpeed() {
+      fireSpeedMode = (fireSpeedMode + 1) % 3;
+      FIRE_DELAY = [200, 100, 50][fireSpeedMode];
+      document.getElementById("fireControlBtn").innerText = `Change Fire Rate (${['Normal','Fast','Ultra'][fireSpeedMode]})`;
+    }
+
+    function drawSpaceship(player, image, flip = false) {
+      ctx.save();
+      if (flip) {
+        ctx.translate(player.x + player.width / 2, player.y + player.height / 2);
+        ctx.rotate(Math.PI);
+        ctx.drawImage(image, -player.width / 2, -player.height / 2, player.width, player.height);
+      } else {
+        ctx.drawImage(image, player.x, player.y, player.width, player.height);
+      }
+      ctx.restore();
+    }
+
+    function drawBullets(player, color) {
+      ctx.fillStyle = color;
+      player.bullets.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
+    }
+
+    function updateCooldownBars() {
+      const now = Date.now();
+      document.getElementById("yellowCooldown").style.width = `${Math.min((now - lastYellowShot)/FIRE_DELAY,1)*100}%`;
+      document.getElementById("redCooldown").style.width = `${Math.min((now - lastRedShot)/FIRE_DELAY,1)*100}%`;
+    }
+
+    let aiLastDecisionTime = 0;
+
+    function handleMovement() {
+        // Player 1 movement
+        if (keys['KeyW'] && yellow.y > 0) yellow.y -= VELOCITY;
+        if (keys['KeyS'] && yellow.y + yellow.height < height) yellow.y += VELOCITY;
+        if (keys['KeyA'] && yellow.x > 0) yellow.x -= VELOCITY;
+        if (keys['KeyD'] && yellow.x + yellow.width < width / 2 - 5) yellow.x += VELOCITY;
+
+        if (!soloMode) {
+            // Player 2 movement
+            if (keys['ArrowUp'] && red.y > 0) red.y -= VELOCITY;
+            if (keys['ArrowDown'] && red.y + red.height < height) red.y += VELOCITY;
+            if (keys['ArrowLeft'] && red.x > width / 2 + 5) red.x -= VELOCITY;
+            if (keys['ArrowRight'] && red.x + red.width < width) red.x += VELOCITY;
+        } else {
+            const now = Date.now();
+
+            // ⚠️ ÉVITER les bullets entrantes
+            const incoming = yellow.bullets.find(b =>
+            b.x > red.x - 100 && b.x < red.x + red.width + 30 &&
+            b.y < red.y + red.height && b.y + b.height > red.y
+            );
+            if (incoming) {
+            // Réagit intelligemment
+            if (red.y > 0 && yellow.y < red.y) red.y -= aiDifficulty * 2;
+            else if (red.y + red.height < height) red.y += aiDifficulty * 2;
+            } else {
+            // 👀 Se repositionne verticalement
+            if (Math.abs(yellow.y - red.y) > 10) {
+                if (yellow.y < red.y && red.y > 0) red.y -= aiDifficulty;
+                else if (yellow.y > red.y && red.y + red.height < height) red.y += aiDifficulty;
+            }
+            }
+
+            // 🧠 Positionnement horizontal : se rapproche uniquement si trop loin pour tirer
+            if (now > aiLastDecisionTime) {
+            const distanceX = red.x - yellow.x;
+
+            // Si trop près ou trop loin, ajustement
+            if (distanceX < 100 && red.x < width - red.width) red.x += aiDifficulty;
+            else if (distanceX > 300 && red.x > width / 2 + 5) red.x -= aiDifficulty;
+
+            aiLastDecisionTime = now + 300 + Math.random() * 500;
+            }
+        }
+    }
+
+
+    function shootBullets() {
+      const now = Date.now();
+      if (keys['KeyF'] && yellow.bullets.length < MAX_BULLETS && now - lastYellowShot > FIRE_DELAY) {
+        yellow.bullets.push({ x: yellow.x + yellow.width, y: yellow.y + yellow.height / 2 - 2, width: 10, height: 5 });
+        lastYellowShot = now;
+      }
+      if (!soloMode && keys['ControlRight'] && red.bullets.length < MAX_BULLETS && now - lastRedShot > FIRE_DELAY) {
+        red.bullets.push({ x: red.x, y: red.y + red.height / 2 - 2, width: 10, height: 5 });
+        lastRedShot = now;
+      }
+      if (soloMode && red.bullets.length < MAX_BULLETS) {
+        const delay = aiDifficulty === 2 ? 300 : 800; // plus rapide si hard
+        if (now - lastRedShot > delay) {
+            red.bullets.push({
+            x: red.x,
+            y: red.y + red.height / 2 - 2,
+            width: 10,
+            height: 5
+            });
+            lastRedShot = now;
+        }
+      }
+    }
+
+    function moveBullets() {
+      yellow.bullets = yellow.bullets.filter(b => {
+        b.x += BULLET_VEL;
+        if (b.x > width || checkCollision(b, red)) {
+          if (checkCollision(b, red)) red.health--;
+          return false;
+        }
+        return true;
+      });
+      red.bullets = red.bullets.filter(b => {
+        b.x -= BULLET_VEL;
+        if (b.x < 0 || checkCollision(b, yellow)) {
+          if (checkCollision(b, yellow)) yellow.health--;
+          return false;
+        }
+        return true;
+      });
+    }
+
+    function checkCollision(b, p) {
+      return b.x < p.x + p.width && b.x + b.width > p.x && b.y < p.y + p.height && b.y + b.height > p.y;
+    }
+
+    function drawHealth() {
+      ctx.fillStyle = 'white';
+      ctx.font = '20px Arial';
+      ctx.fillText(`Health: ${yellow.health}`, 10, 30);
+      ctx.fillText(`Health: ${red.health}`, width - 120, 30);
+    }
+
+    function drawBorder() {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(width / 2 - 5, 0, 10, height);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      drawBorder();
+      drawHealth();
+      drawSpaceship(yellow, yellowImg);
+      drawSpaceship(red, redImg, true);
+      drawBullets(yellow, 'yellow');
+      drawBullets(red, 'red');
+    }
+
+    function gameLoop() {
+      if (yellow.health <= 0 || red.health <= 0) {
+        document.getElementById('winnerText').innerText = yellow.health <= 0 ? '🔴 Red Wins!' : '🟡 Yellow Wins!';
+        document.getElementById('gameOverScreen').style.display = 'flex';
+        canvas.style.display = 'none';
+        return;
+      }
+      handleMovement();
+      shootBullets();
+      moveBullets();
+      updateCooldownBars();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function startGame() {
+      canvas.style.display = 'block';
+      document.getElementById('cooldownBars').style.display = 'flex';
+      document.getElementById('fireControlBtn').style.display = 'block';
+      gameLoop();
+    }
+
+    window.onload = updateAIDifficultyVisibility;
+  </script>
+</body>
+</html>
