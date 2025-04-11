@@ -52,6 +52,8 @@ Spaceship_Game/
 - **Déplacement** : Flèches directionnelles
 - **Tir** : `Ctrl Droit`
 
+### Pause :
+- ** Mettre le jeu en pause** : `P`
 ---
 
 ## 🚀 Lancement en local (version Python)
