@@ -5,6 +5,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Spaceship Game</title>
   <style>
+    footer.footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    padding: 12px 10px;
+    background: #111;
+    color: white;
+    text-align: center;
+    font-size: 0.85rem;
+    z-index: 1000;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+    }
+
+    .footer-links a {
+    color: #0af;
+    text-decoration: none;
+    margin: 0 4px;
+    }
+    .footer-links a:hover {
+    color: #fff;
+    }
+
+    .footer-bar {
+    margin-top: 5px;
+    height: 2px;
+    background: linear-gradient(90deg, #0af, #fff, #0af);
+    animation: footerBarSlide 4s linear infinite;
+    }
+
+    @keyframes footerBarSlide {
+    from { background-position: 0% }
+    to { background-position: 100% }
+    }
+
+    .author {
+    display: inline-block;
+    animation: floatIcon 2.5s ease-in-out infinite;
+    }
+
+    @keyframes floatIcon {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+    100% { transform: translateY(0); }
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body, html {
       width: 100%; height: 100%; background: black;
@@ -69,6 +114,7 @@
     <h1>🚀 Spaceship War Game</h1>
     <p>🎮 Player 1: WASD + F (tir)</p>
     <p>🕹️ Player 2: Arrows + Right Ctrl (tir)</p>
+    <p>Appuie sur <strong>P</strong> pour mettre le jeu en pause</p>
     <label>Mode:
       <select id="modeSelect" onchange="updateAIDifficultyVisibility()">
         <option value="solo">Solo (vs AI)</option>
@@ -105,8 +151,26 @@
 
   <div id="countdown" style="display:none; font-size: 3rem;">3</div>
   <button id="fireControlBtn" style="display:none" onclick="toggleFireSpeed()">Change Fire Rate (Normal)</button>
+  <button id="pauseBtn" style="position:absolute; top:10px; right:10px; padding:10px; font-size:1.2rem; background:#222; color:white; border:2px solid white; border-radius:10px; z-index:1000; display:none;" onclick="togglePause()">
+    ⏯ Pause
+  </button>
 
-  <canvas id="gameCanvas" width="900" height="500" style="display:none;"></canvas>
+  <canvas id="gameCanvas" width="900" height="500" style="display:none;">  </canvas>
+  <div id="pauseOverlay" style="
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3rem;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.85);
+    padding: 30px 50px;
+    border-radius: 20px;
+    z-index: 999;
+    box-shadow: 0 0 30px rgba(255,255,255,0.3);">
+    ⏸ Pause
+  </div>
 
   <script>
     let soloMode = true;
@@ -114,6 +178,7 @@
     let VELOCITY = 5;
     let FIRE_DELAY = 200;
     let fireSpeedMode = 0;
+    let isPaused = false;
 
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
@@ -131,8 +196,22 @@
     const MAX_BULLETS = 3;
     let lastYellowShot = 0, lastRedShot = 0;
 
-    document.addEventListener('keydown', e => keys[e.code] = true);
-    document.addEventListener('keyup', e => keys[e.code] = false);
+    document.addEventListener('keydown', e => {
+        keys[e.code] = true;
+
+        // Activer/désactiver la pause avec la touche P
+        if (e.code === 'KeyP') {
+            isPaused = !isPaused;
+            let pauseOverlay = document.getElementById('pauseOverlay');
+            if (pauseOverlay) {
+            pauseOverlay.style.display = isPaused ? 'flex' : 'none';
+            }
+        }
+    });
+
+    document.addEventListener('keyup', e => {
+        keys[e.code] = false;
+    });
 
     function updateAIDifficultyVisibility() {
       const mode = document.getElementById('modeSelect').value;
@@ -303,18 +382,22 @@
     }
 
     function gameLoop() {
-      if (yellow.health <= 0 || red.health <= 0) {
-        document.getElementById('winnerText').innerText = yellow.health <= 0 ? '🔴 Red Wins!' : '🟡 Yellow Wins!';
-        document.getElementById('gameOverScreen').style.display = 'flex';
-        canvas.style.display = 'none';
-        return;
-      }
-      handleMovement();
-      shootBullets();
-      moveBullets();
-      updateCooldownBars();
-      draw();
-      requestAnimationFrame(gameLoop);
+        if (yellow.health <= 0 || red.health <= 0) {
+            document.getElementById('winnerText').innerText = yellow.health <= 0 ? '🔴 Red Wins!' : '🟡 Yellow Wins!';
+            document.getElementById('gameOverScreen').style.display = 'flex';
+            canvas.style.display = 'none';
+            return;
+        }
+
+        if (!isPaused) {
+            handleMovement();
+            shootBullets();
+            moveBullets();
+            updateCooldownBars();
+            draw();
+        }
+
+        requestAnimationFrame(gameLoop);
     }
 
     function startGame() {
@@ -324,7 +407,27 @@
       gameLoop();
     }
 
+    function togglePause() {
+        isPaused = !isPaused;
+        let pauseOverlay = document.getElementById('pauseOverlay');
+        pauseOverlay.style.display = isPaused ? 'flex' : 'none';
+    }
+
     window.onload = updateAIDifficultyVisibility;
   </script>
+  <footer class="footer">
+    <div class="footer-wrapper">
+      <p>
+        🚀 Projet réalisé par <strong class="author">Teddy Kana</strong> — Étudiant en Génie logiciel à l’Université Laval
+      </p>
+      <p class="footer-links">
+        📧 <a href="mailto:kanaboumkwoiit@outlook.com">kanaboumkwoiit@outlook.com</a> |
+        💻 <a href="https://github.com/J0YB0Y28" target="_blank">GitHub</a> |
+        💼 <a href="https://www.linkedin.com/in/teddy-kana-6a26832b9/" target="_blank">LinkedIn</a> |
+        🌐 <a href="https://j0yb0y28.github.io/portfolio/" target="_blank">Portfolio</a>
+      </p>
+      <div class="footer-bar"></div>
+    </div>
+  </footer>
 </body>
 </html>
