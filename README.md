@@ -77,6 +77,10 @@ pip install -r requirements.txt
 python main.py
 ```
 
+### 4. Note importante
+```
+**La version Python et la version en ligne, n'ont pas les mêmes fonctionnalités !**
+```
 ---
 
 ## 🧠 Technologies utilisées
